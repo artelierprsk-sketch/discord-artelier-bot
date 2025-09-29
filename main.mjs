@@ -26,9 +26,9 @@ client.once('ready', () => {
 
 // メッセージが送信されたときの処理
 client.on('messageCreate', async (message) => {
-    const tweet_message_id = 1422238827103387648;
-    const runmemo_channel_id = 1420884330275672125;
-    const room_channel_id = 1420896599038623986;
+    const tweet_message_id = "1422238827103387648";
+    const runmemo_channel_id = "1420884330275672125";
+    const room_channel_id = "1420896599038623986";
 
     // Bot自身のメッセージは無視
     if (message.author.bot) return;
