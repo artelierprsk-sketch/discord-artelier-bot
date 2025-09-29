@@ -1,8 +1,10 @@
 // main.mjs - Discord Botのメインプログラム
 
 // 必要なライブラリを読み込み
-import { Client, GatewayIntentBits } from 'discord.js';
-import { MessageActionRow, MessageButton, MessageEmbed } from 'discord.js';
+import Discord from 'discord.js';
+const { Client, GatewayIntentBits, MessageActionRow, MessageButton, MessageEmbed } = Discord;
+// import { Client, GatewayIntentBits } from 'discord.js';
+// import { MessageActionRow, MessageButton, MessageEmbed } from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
 
