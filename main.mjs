@@ -25,7 +25,7 @@ client.once('ready', () => {
 });
 
 // メッセージが送信されたときの処理
-client.on('messageCreate', (message) => {
+client.on('messageCreate', async (message) => {
     const tweet_message_id = 1422238827103387648;
     const runmemo_channel_id = 1420884330275672125;
     const room_channel_id = 1420896599038623986;
@@ -48,7 +48,9 @@ client.on('messageCreate', (message) => {
         // message.channel.send("test");
 
         //部屋番号を入手
-        var channelName = client.channels.cache.get(room_channel_id).name;
+        // var channelName = client.channels.fetch.get(room_channel_id).name;
+        const channel = await client.channels.fetch(room_channel_id);
+        const channelName = channel.name;
         var pattern = /【\d{5}】/;
         var aryRoomNo = channelName.match(pattern);
 
@@ -146,5 +148,5 @@ app.listen(port, () => {
 
 //memo
 // git add .
-// git commit -m "text"
+// git commit -m "test"
 // git push origin main
