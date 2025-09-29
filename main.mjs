@@ -2,7 +2,7 @@
 
 // 必要なライブラリを読み込み
 import Discord from 'discord.js';
-const { Client, GatewayIntentBits, MessageActionRow, MessageButton, EmbedBuilder } = Discord;
+const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, EmbedBuilder } = Discord;
 // import { Client, GatewayIntentBits } from 'discord.js';
 // import { MessageActionRow, MessageButton, MessageEmbed } from 'discord.js';
 import dotenv from 'dotenv';
@@ -82,8 +82,8 @@ client.on('messageCreate', async (message) => {
                 .setDescription(msg)
                 .setColor("#1DA1F2");
 
-            const row = new MessageActionRow().addComponents(
-                new MessageButton()
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
                     .setStyle("LINK")
                     .setLabel("Twitterのツイート画面を開く")
                     .setURL(tweetUrl)
