@@ -2,7 +2,7 @@
 
 // 必要なライブラリを読み込み
 import Discord from 'discord.js';
-const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, EmbedBuilder } = Discord;
+const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle } = Discord;
 // import { Client, GatewayIntentBits } from 'discord.js';
 // import { MessageActionRow, MessageButton, MessageEmbed } from 'discord.js';
 import dotenv from 'dotenv';
