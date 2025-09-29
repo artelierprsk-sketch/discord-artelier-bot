@@ -45,59 +45,91 @@ client.on('messageCreate', async (message) => {
     // }
 
     if (content == "!tweet") {
-        // message.channel.send("test");
-
-        //部屋番号を入手
-        // var channelName = client.channels.fetch.get(room_channel_id).name;
-        const channel = await client.channels.fetch(room_channel_id);
-        const channelName = channel.name;
-        var pattern = /【\d{5}】/;
-        var aryRoomNo = channelName.match(pattern);
-
-        var roomNo = "";
-        if (aryRoomNo != null) {
-            roomNo = aryRoomNo[0];
-        }
-        if (roomNo == "") return ;
-        console.log(roomNo);
-
-        client.channels.cache
-            .get(runmemo_channel_id)
-            .messages.fetch(tweet_message_id)
-            .then(function(targetmessage) {
-                var text = targetmessage.content;
-                text = text,replace("【】", roomNo);
-                text = encodeURIComponent(text);
-                const tweetUrl = "https://twitter.com/intent/tweet?text=" + text ;
-
-                const len = tweetUrl.length;
-                if (len > 512) {
-                    message.channel.send(`本文が長すぎるためリンクを生成できませんでした。 (${len}文字)`);
-                    return;
-                };
-
-                const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
-                const msg = "以下のボタンをクリックすると、ツイ募のツイート画面が開きます。"
-                  + "\r※リンクを開くだけではツイートまでは行われません。ツイート画面が開くだけです。"
-                  + "\r※「周回メモ」チャンネルのメッセージに、部屋番号を自動反映してリンクを生成しています。";
-
-                const embed = new MessageEmbed()
+        try {
+            // message.channel.send("test");
+            
+            //部屋番号を入手
+            // var channelName = client.channels.fetch.get(room_channel_id).name;
+            const roomChannel = await client.channels.fetch(room_channel_id);
+            const channelName = roomChannel.name;
+            var pattern = /【\d{5}】/;
+            var aryRoomNo = channelName.match(pattern);
+            
+            if (!aryRoomNo) return;
+            const roomNo = aryRoomNo[0];
+            console.log(roomNo);
+            
+            const runMemoChannel = await client.channels.fetch(runmemo_channel_id);
+            const targetMessage = await runMemoChannel.messages.fetch(tweet_message_id);
+            
+            let text = targetMessage.content.replace("【】", roomNo);
+            text = encodeURIComponent(text);
+            
+            const tweetUrl = "https://twitter.com/intent/tweet?text=" + text;
+            if (tweetUrl.length > 512) {
+                message.channel.send(`本文が長すぎるためリンクを生成できませんでした。 (${tweetUrl.length}文字)`);
+                return;
+            }
+        
+            const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
+            const msg = "以下のボタンをクリックすると、ツイ募のツイート画面が開きます。\n※リンクを開くだけでツイートは行われません。\n※「周回メモ」チャンネルのメッセージに部屋番号を自動反映してリンクを生成しています。";
+        
+            const embed = new MessageEmbed()
                 .setTitle("ツイ募用リンク")
                 .setDescription(msg)
                 .setColor("#1DA1F2");
+        
+            const row = new MessageActionRow().addComponents(
+                new MessageButton()
+                    .setStyle("LINK")
+                    .setLabel("Twitterのツイート画面を開く")
+                    .setURL(tweetUrl)
+            );
+            
+            message.channel.send({ embeds: [embed], components: [row] });
+            
+        } catch (error) {
+            console.error('❌ !tweet 処理中にエラーが発生:', error);
+            message.channel.send('❌ !tweet 処理中にエラーが発生しました。チャンネルIDや権限を確認してください。');
+        }        
 
-                const row = new MessageActionRow().addComponents(
-                  new MessageButton()
-                  .setStyle("LINK")
-                  .setLabel("Twitterのツイート画面を開く")
-                  .setURL(tweetUrl)
-                );
+        // client.channels.cache
+        //     .get(runmemo_channel_id)
+        //     .messages.fetch(tweet_message_id)
+        //     .then(function(targetmessage) {
+        //         var text = targetmessage.content;
+        //         text = text,replace("【】", roomNo);
+        //         text = encodeURIComponent(text);
+        //         const tweetUrl = "https://twitter.com/intent/tweet?text=" + text ;
+
+        //         const len = tweetUrl.length;
+        //         if (len > 512) {
+        //             message.channel.send(`本文が長すぎるためリンクを生成できませんでした。 (${len}文字)`);
+        //             return;
+        //         };
+
+        //         const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
+        //         const msg = "以下のボタンをクリックすると、ツイ募のツイート画面が開きます。"
+        //           + "\r※リンクを開くだけではツイートまでは行われません。ツイート画面が開くだけです。"
+        //           + "\r※「周回メモ」チャンネルのメッセージに、部屋番号を自動反映してリンクを生成しています。";
+
+        //         const embed = new MessageEmbed()
+        //         .setTitle("ツイ募用リンク")
+        //         .setDescription(msg)
+        //         .setColor("#1DA1F2");
+
+        //         const row = new MessageActionRow().addComponents(
+        //           new MessageButton()
+        //           .setStyle("LINK")
+        //           .setLabel("Twitterのツイート画面を開く")
+        //           .setURL(tweetUrl)
+        //         );
                 
-                message.channel.send({
-                  embeds: [embed],
-                  components: [row]
-                });             
-            });
+        //         message.channel.send({
+        //           embeds: [embed],
+        //           components: [row]
+        //         });             
+        //     });
     } ;
 });
 
