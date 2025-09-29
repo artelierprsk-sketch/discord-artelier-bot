@@ -2,7 +2,7 @@
 
 // 必要なライブラリを読み込み
 import Discord from 'discord.js';
-const { Client, GatewayIntentBits, MessageActionRow, MessageButton, MessageEmbed } = Discord;
+const { Client, GatewayIntentBits, MessageActionRow, MessageButton, EmbedBuilder } = Discord;
 // import { Client, GatewayIntentBits } from 'discord.js';
 // import { MessageActionRow, MessageButton, MessageEmbed } from 'discord.js';
 import dotenv from 'dotenv';
@@ -77,7 +77,7 @@ client.on('messageCreate', async (message) => {
             // const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
             const msg = "以下のボタンをクリックすると、ツイ募のツイート画面が開きます。\n※リンクを開くだけでツイートは行われません。\n※「周回メモ」チャンネルのメッセージに部屋番号を自動反映してリンクを生成しています。";
 
-            const embed = new MessageEmbed()
+            const embed = new EmbedBuilder()
                 .setTitle("ツイ募用リンク")
                 .setDescription(msg)
                 .setColor("#1DA1F2");
