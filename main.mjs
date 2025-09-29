@@ -26,14 +26,21 @@ client.once('ready', () => {
 
 // メッセージが送信されたときの処理
 client.on('messageCreate', (message) => {
+    const tweet_message_id = 1422238827103387648;
+    const room_channel_id = 1420896599038623986;
+
     // Bot自身のメッセージは無視
     if (message.author.bot) return;
     
     // 「ping」メッセージに反応
-    if (message.content.toLowerCase() === 'ping') {
-        message.reply('🏓 pong!');
-        console.log(`📝 ${message.author.tag} が ping コマンドを使用`);
-    }
+    // if (message.content.toLowerCase() === 'ping') {
+    //     message.reply('🏓 pong!');
+    //     console.log(`📝 ${message.author.tag} が ping コマンドを使用`);
+    // }
+
+    if (message.content == "!tweet") {
+        message.channel.send("test");
+    } ;
 });
 
 // エラーハンドリング
@@ -78,3 +85,10 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`🌐 Web サーバーがポート ${port} で起動しました`);
 });
+
+
+
+//memo
+// git add .
+// git commit -m "text"
+// git push origin main
