@@ -84,7 +84,7 @@ client.on('messageCreate', async (message) => {
 
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
-                    .setStyle("LINK")
+                    .setStyle(ButtonStyle.Link)
                     .setLabel("Twitterのツイート画面を開く")
                     .setURL(tweetUrl)
             );
