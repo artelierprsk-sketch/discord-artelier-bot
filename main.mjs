@@ -101,7 +101,6 @@ client.on('error', (error) => {
 
 
   //memo 
-  // git add . 
-  // git commit -m "test" 
+  // git add .
+  // git commit -m "test"
   // git push origin main
-  
