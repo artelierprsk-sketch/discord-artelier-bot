@@ -111,7 +111,7 @@ export async function execute(interaction, client) {
       replyText = `### ヒント3\n・作者: ${producer}`;
     } else if (type === "answer") {
       const music = fields[3]?.trim() || "不明";
-      replyText = `### 答え\n${music}`;
+      replyText = `### 答え\n「${music}」`;
     }
 
     // 出題メッセージへの返信として送信
