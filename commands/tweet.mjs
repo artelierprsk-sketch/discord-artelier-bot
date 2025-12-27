@@ -6,7 +6,7 @@ export const command = new SlashCommandBuilder()
 
 export async function execute(interaction, client) {
   const tweet_message_id = "1454345535497568359";
-  const runmemo_channel_id = "1454348264739704943";
+  const runmemo_channel_id = "1454339724301832375";
   const room_channel_id = "1454349222856888473";
 
   try {
