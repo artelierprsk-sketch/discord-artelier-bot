@@ -5,9 +5,9 @@ export const command = new SlashCommandBuilder()
   .setDescription("ツイ募用リンクを生成します");
 
 export async function execute(interaction, client) {
-  const tweet_message_id = "1422238827103387648";
-  const runmemo_channel_id = "1420884330275672125";
-  const room_channel_id = "1420896599038623986";
+  const tweet_message_id = "1454345535497568359";
+  const runmemo_channel_id = "1454348264739704943";
+  const room_channel_id = "1454349222856888473";
 
   try {
     const roomChannel = await client.channels.fetch(room_channel_id);
