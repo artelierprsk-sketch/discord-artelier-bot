@@ -1,13 +1,27 @@
 // services/shiftImagePoster.mjs
-import { createCanvas } from "canvas";
+import { createCanvas, registerFont } from "canvas";
 import { AttachmentBuilder } from "discord.js";
 import { google } from "googleapis";
+import path from "path";
+import { fileURLToPath } from "url";
 
 /* =========================
    Font setup
 ========================= */
+
+// __dirname 代替（ESM）
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ★ 追加：日本語フォント登録（起動時に1回だけ）
+registerFont(
+  path.join(__dirname, "../fonts/NotoSansCJKjp-Regular.otf"),
+  { family: "NotoSansCJKjp" }
+);
+
+// ★ 先頭に NotoSansCJKjp を追加
 const FONT_FAMILY =
-  '"Segoe UI Emoji","Segoe UI Symbol","Meiryo","Arial",sans-serif';
+  '"NotoSansCJKjp","Segoe UI Emoji","Segoe UI Symbol","Meiryo","Arial",sans-serif';
 
 /* =========================
    Google Sheets client
@@ -139,15 +153,12 @@ export function renderShiftImage(rowData) {
 ========================= */
 function buildMessageText(def) {
   const now = new Date();
-
   const um = now.getMonth() + 1;
   const ud = now.getDate();
   const hh = String(now.getHours()).padStart(2, "0");
   const mm = String(now.getMinutes()).padStart(2, "0");
 
-  return (
-`(※自動更新中…  最終更新 : ${um}/${ud} ${hh}:${mm})`
-  );
+  return `(※自動更新中…  最終更新 : ${um}/${ud} ${hh}:${mm})`;
 }
 
 /* =========================
@@ -175,44 +186,32 @@ export async function postShiftImages({
     const d = date.getDate();
     const w = jpWeek[date.getDay()];
 
-    const identifier = `${m}月${d}日(${w}) ${def.sheetName}`  //`[shift-${def.sheetName}]`;
+    const identifier = `${m}月${d}日(${w}) ${def.sheetName}`;
     const content = `${identifier}\n\n${buildMessageText(def)}`;
 
     const attachment = new AttachmentBuilder(png, {
       name: `${def.sheetName}.png`,
     });
 
-    /* ===== メッセージ起動 ===== */
     if (mode === "message" && triggerMessage) {
-      await triggerMessage.channel.send({
-        content,
-        files: [attachment],
-      });
+      await triggerMessage.channel.send({ content, files: [attachment] });
     }
 
-    /* ===== 定時実行（編集更新方式） ===== */
     if (mode === "cron") {
       const channel = await client.channels.fetch(def.channelId);
       if (!channel?.isTextBased()) continue;
 
       const messages = await channel.messages.fetch({ limit: 20 });
-
-      // ★ 自分が送信した & 識別文字列一致 のみ対象
-      const old = messages.find(m =>
-        m.author.id === client.user.id &&
-        m.content.startsWith(identifier)
+      const old = messages.find(
+        m =>
+          m.author.id === client.user.id &&
+          m.content.startsWith(identifier)
       );
 
       if (old) {
-        await old.edit({
-          content,
-          files: [new AttachmentBuilder(png, { name: `${def.sheetName}.png` })],
-        });
+        await old.edit({ content, files: [attachment] });
       } else {
-        await channel.send({
-          content,
-          files: [new AttachmentBuilder(png, { name: `${def.sheetName}.png` })],
-        });
+        await channel.send({ content, files: [attachment] });
       }
 
       console.log(`✅ ${def.sheetName} シフト画像投稿完了`);
