@@ -9,19 +9,25 @@ import { fileURLToPath } from "url";
    Font setup
 ========================= */
 
-// __dirname 代替（ESM）
+// __dirname (ESM)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ★ 追加：日本語フォント登録（起動時に1回だけ）
+// 日本語フォント
 registerFont(
   path.join(__dirname, "../fonts/NotoSansCJKjp-Regular.otf"),
   { family: "NotoSansCJKjp" }
 );
 
-// ★ 先頭に NotoSansCJKjp を追加
+// 絵文字フォント
+registerFont(
+  path.join(__dirname, "../fonts/NotoColorEmoji.ttf"),
+  { family: "NotoColorEmoji" }
+);
+
+// フォント優先順
 const FONT_FAMILY =
-  '"NotoSansCJKjp","Segoe UI Emoji","Segoe UI Symbol","Meiryo","Arial",sans-serif';
+  '"NotoColorEmoji","NotoSansCJKjp","Segoe UI Emoji","Segoe UI Symbol","Meiryo","Arial",sans-serif';
 
 /* =========================
    Google Sheets client
@@ -153,12 +159,15 @@ export function renderShiftImage(rowData) {
 ========================= */
 function buildMessageText(def) {
   const now = new Date();
+
   const um = now.getMonth() + 1;
   const ud = now.getDate();
   const hh = String(now.getHours()).padStart(2, "0");
   const mm = String(now.getMinutes()).padStart(2, "0");
 
-  return `(※自動更新中…  最終更新 : ${um}/${ud} ${hh}:${mm})`;
+  return (
+`(※自動更新中…  最終更新 : ${um}/${ud} ${hh}:${mm})`
+  );
 }
 
 /* =========================
@@ -194,7 +203,10 @@ export async function postShiftImages({
     });
 
     if (mode === "message" && triggerMessage) {
-      await triggerMessage.channel.send({ content, files: [attachment] });
+      await triggerMessage.channel.send({
+        content,
+        files: [attachment],
+      });
     }
 
     if (mode === "cron") {
@@ -202,16 +214,22 @@ export async function postShiftImages({
       if (!channel?.isTextBased()) continue;
 
       const messages = await channel.messages.fetch({ limit: 20 });
-      const old = messages.find(
-        m =>
-          m.author.id === client.user.id &&
-          m.content.startsWith(identifier)
+
+      const old = messages.find(m =>
+        m.author.id === client.user.id &&
+        m.content.startsWith(identifier)
       );
 
       if (old) {
-        await old.edit({ content, files: [attachment] });
+        await old.edit({
+          content,
+          files: [new AttachmentBuilder(png, { name: `${def.sheetName}.png` })],
+        });
       } else {
-        await channel.send({ content, files: [attachment] });
+        await channel.send({
+          content,
+          files: [new AttachmentBuilder(png, { name: `${def.sheetName}.png` })],
+        });
       }
 
       console.log(`✅ ${def.sheetName} シフト画像投稿完了`);
