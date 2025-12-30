@@ -6,14 +6,13 @@ export const command = new SlashCommandBuilder()
 
 export async function execute(interaction, client) {
   const tweet_message_id = "1454345535497568359";
-  const runmemo_channel_id = "1454339724301832375";
+  const runmemo_channel_id = "1454344498120228999";
   const room_channel_id = "1454349222856888473";
 
   try {
     const roomChannel = await client.channels.fetch(room_channel_id);
     const channelName = roomChannel.name;
     const aryRoomNo = channelName.match(/【\d{5}】/);
-
     if (!aryRoomNo) {
       await interaction.reply({ content: "❌ 部屋番号が見つかりませんでした。", ephemeral: true });
       return;
@@ -51,7 +50,7 @@ export async function execute(interaction, client) {
   } catch (error) {
     console.error("❌ /tweet 実行中にエラー:", error);
     await interaction.reply({
-      content: "❌ 実行中にエラーが発生しました。チャンネルIDや権限を確認してください。",
+      content: "❌ 実行中にエラーが発生しました。aaチャンネルIDや権限を確認してください。",
       ephemeral: true,
     });
   }

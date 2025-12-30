@@ -10,8 +10,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^14.22.1",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0"
+    "canvas": "^3.2.0",
+    "discord.js": "^14.25.1",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "googleapis": "^169.0.0",
+    "node-cron": "^4.2.1",
+    "node-fetch": "^3.3.2",
+    "twemoji": "^14.0.2"
   }
 }

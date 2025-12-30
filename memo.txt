@@ -1,0 +1,21 @@
+
+//git
+# 全ての変更をステージング
+git add .
+
+# 変更内容を記録
+git commit -m "test"
+
+# GitHubにアップロード
+git push origin main
+
+
+
+//test
+node main.mjs
+
+
+//スラッシュコマンド追加
+node deploy-commands.mjs
+
+
