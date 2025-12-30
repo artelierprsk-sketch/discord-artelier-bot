@@ -5,20 +5,24 @@ import { readdirSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { startShiftCron } from "./schedulers/shiftCron.mjs";
-// import { handleUpdateShift } from "./messageCommands/updateShift.mjs";
-import { postShiftImages } from "./services/shiftImagePoster.mjs"; // ★ 追加
+import { postShiftImages } from "./services/shiftImagePoster.mjs";
 import { collectShift } from "./services/shiftCollector.mjs";
 import { SHIFT_DEFINITIONS } from "./services/shiftDefinitions.mjs";
 
 dotenv.config();
-// console.log("GOOGLE_SHEET_ID:", process.env.GOOGLE_SHEET_ID);
+
 console.log("TOKEN exists:", !!process.env.DISCORD_TOKEN);
 console.log("PRIVATE KEY exists:", !!process.env.GOOGLE_PRIVATE_KEY);
 
-// __dirname の代替 (ESM)
+// ===============================
+// パス設定
+// ===============================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ===============================
+// Discord Client
+// ===============================
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -30,7 +34,9 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// commands フォルダのコマンドを読み込み
+// ===============================
+// コマンド読み込み
+// ===============================
 const commandFiles = readdirSync(path.join(__dirname, "commands"))
   .filter(file => file.endsWith(".mjs"));
 
@@ -40,8 +46,13 @@ for (const file of commandFiles) {
   client.commands.set(command.name, { data: command, execute });
 }
 
+console.log(`📦 読み込んだコマンド数: ${client.commands.size}`);
+
+// ===============================
+// Discord Events（重要）
+// ===============================
 client.once(Events.ClientReady, (c) => {
-  console.log(`🎉 ${c.user.tag} が正常に起動しました！`);
+  console.log(`🎉 READY: ${c.user.tag} (${c.user.id})`);
 
   startShiftCron(
     client,
@@ -50,34 +61,31 @@ client.once(Events.ClientReady, (c) => {
       await postShiftImages({
         mode: "cron",
         client,
-        shiftDefinitions: targets, // ★ 期限内のみ
+        shiftDefinitions: targets,
       });
     }
   );
 });
 
-
-client.on(Events.MessageCreate, async (message) => {
-  if (message.author.bot) return;
-  if (message.content.trim() !== "!us") return;
-
-  try {
-    for (const def of SHIFT_DEFINITIONS) {
-      await collectShift(client, def);
-    }
-
-    await postShiftImages({
-      mode: "message",
-      client,
-      shiftDefinitions: SHIFT_DEFINITIONS,
-      triggerMessage: message,
-    });
-  } catch (err) {
-    console.error(err);
-    await message.reply("❌ シフト更新中にエラーが発生しました。");
-  }
+client.on("shardReady", (id) => {
+  console.log(`🧩 Shard ${id} ready`);
 });
 
+client.on("shardDisconnect", (event, id) => {
+  console.error(`⚠️ Shard ${id} disconnected`, event);
+});
+
+client.on("shardError", (error, id) => {
+  console.error(`❌ Shard ${id} error`, error);
+});
+
+client.on("error", (error) => {
+  console.error("❌ Discord client error:", error);
+});
+
+// ===============================
+// Interaction
+// ===============================
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -92,52 +100,56 @@ client.on(Events.InteractionCreate, async (interaction) => {
   } catch (error) {
     console.error(error);
     if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content: "❌ コマンド実行中にエラーが発生しました。",
-        ephemeral: true,
-      });
+      await interaction.followUp({ content: "❌ エラーが発生しました。", ephemeral: true });
     } else {
-      await interaction.reply({
-        content: "❌ コマンド実行中にエラーが発生しました。",
-        ephemeral: true,
-      });
+      await interaction.reply({ content: "❌ エラーが発生しました。", ephemeral: true });
     }
   }
 });
 
-// Discord クライアントエラー
-client.on("error", (error) => {
-  console.error("❌ Discord クライアントエラー:", error);
+// ===============================
+// プロセス系
+// ===============================
+process.on("unhandledRejection", (reason) => {
+  console.error("❌ unhandledRejection:", reason);
 });
 
-// プロセス終了時
 process.on("SIGINT", () => {
   console.log("🛑 Botを終了しています...");
   client.destroy();
   process.exit(0);
 });
 
-// Discord にログイン
+// ===============================
+// Discord Login
+// ===============================
 if (!process.env.DISCORD_TOKEN) {
-  console.error("❌ DISCORD_TOKEN が .env ファイルに設定されていません！");
+  console.error("❌ DISCORD_TOKEN が未設定です");
   process.exit(1);
 }
 
 console.log("🔄 Discord に接続中...");
-client.login(process.env.DISCORD_TOKEN).catch(error => {
-  console.error("❌ ログインに失敗しました:", error);
-  process.exit(1);
-});
 
-// Express Webサーバー（Render用）
+client.login(process.env.DISCORD_TOKEN)
+  .then(() => {
+    console.log("🔑 login() Promise resolved");
+  })
+  .catch(error => {
+    console.error("❌ Discord login failed:", error);
+    process.exit(1);
+  });
+
+// ===============================
+// Express（Render用）
+// ===============================
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
   res.json({
-    status: "Bot is running! 🤖",
+    status: "Bot is running",
     uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
+    time: new Date().toISOString(),
   });
 });
 
