@@ -12,6 +12,8 @@ import { SHIFT_DEFINITIONS } from "./services/shiftDefinitions.mjs";
 
 dotenv.config();
 // console.log("GOOGLE_SHEET_ID:", process.env.GOOGLE_SHEET_ID);
+console.log("TOKEN exists:", !!process.env.DISCORD_TOKEN);
+console.log("PRIVATE KEY exists:", !!process.env.GOOGLE_PRIVATE_KEY);
 
 // __dirname の代替 (ESM)
 const __filename = fileURLToPath(import.meta.url);
