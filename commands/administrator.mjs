@@ -379,10 +379,12 @@ async function executeShiftCollection(interaction, client) {
           .map((message) => [message.author.id, message])
       ).values());
 
+      const firstEmptyARowIndex = columnA.findIndex((row, index) => index >= 2 && (!row[0] || row[0].toString().trim() === ""));
+      const metaUsernameRow = firstEmptyARowIndex === -1 ? columnA.length + 1 : firstEmptyARowIndex + 1;
+      const metaContentRow = metaUsernameRow + 1;
+
       const updates = [];
       let processedCount = 0;
-      const metaUsernameRow = 11;
-      const metaContentRow = 12;
 
       for (const message of userEntries) {
         let displayName = message.author.username;
