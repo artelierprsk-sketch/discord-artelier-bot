@@ -2,6 +2,8 @@ import { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder } from "
 import { google } from "googleapis";
 import { SHIFT_DEFINITIONS } from "../services/shiftDefinitions.mjs";
 
+const ADMIN_REACTION = "🌸";
+
 function getSheetsClient() {
   const auth = new google.auth.GoogleAuth({
     credentials: {
@@ -221,7 +223,7 @@ async function executeCollectSupportParty(interaction, client) {
     }
 
     await Promise.allSettled(
-      Array.from(uniqueMessagesByUsername.values()).map((message) => message.react("🌸"))
+      Array.from(uniqueMessagesByUsername.values()).map((message) => message.react(ADMIN_REACTION))
     );
 
     await interaction.reply({
@@ -411,7 +413,7 @@ async function executeShiftCollection(interaction, client) {
       }
 
       await Promise.allSettled(
-        userEntries.map((message) => message.react("🌸"))
+        userEntries.map((message) => message.react(ADMIN_REACTION))
       );
 
       await safeReply(selectInteraction, {
