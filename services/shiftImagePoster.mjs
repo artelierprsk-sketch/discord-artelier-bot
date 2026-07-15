@@ -1,37 +1,24 @@
-// services/shiftImagePoster.mjs
+/*
+シフト表を画像化してメッセージとして送信する。
+*/
+
 import { createCanvas, registerFont } from "canvas";
 import { AttachmentBuilder } from "discord.js";
 import { google } from "googleapis";
 import path from "path";
 import { fileURLToPath } from "url";
 
-/* =========================
-   Font setup
-========================= */
-
 // __dirname (ESM)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 日本語フォント
+// フォント
 registerFont(
   path.join(__dirname, "../fonts/NotoSansCJKjp-Regular.otf"),
   { family: "NotoSansCJKjp" }
 );
+const FONT_FAMILY = '"NotoSansCJKjp","Segoe UI Emoji","Segoe UI Symbol","Meiryo","Arial",sans-serif';
 
-// 絵文字フォント
-registerFont(
-  path.join(__dirname, "../fonts/NotoColorEmoji.ttf"),
-  { family: "NotoColorEmoji" }
-);
-
-// フォント優先順
-const FONT_FAMILY =
-  '"NotoColorEmoji","NotoSansCJKjp","Segoe UI Emoji","Segoe UI Symbol","Meiryo","Arial",sans-serif';
-
-/* =========================
-   Google Sheets client
-========================= */
 function getSheetsClient() {
   const auth = new google.auth.GoogleAuth({
     credentials: {
@@ -45,9 +32,6 @@ function getSheetsClient() {
   return google.sheets({ version: "v4", auth });
 }
 
-/* =========================
-   Sheet → Cell 情報取得
-========================= */
 async function loadSheetCells(sheetName) {
   const sheets = getSheetsClient();
   const SHEET_ID = process.env.GOOGLE_SHEET_ID;
@@ -62,9 +46,6 @@ async function loadSheetCells(sheetName) {
   return sheet?.data?.[0]?.rowData ?? [];
 }
 
-/* =========================
-   色変換
-========================= */
 function colorToCss(color, fallback) {
   if (!color) return fallback;
   const r = Math.round((color.red ?? 0) * 255);
@@ -74,16 +55,79 @@ function colorToCss(color, fallback) {
   return `rgba(${r},${g},${b},${a})`;
 }
 
-/* =========================
-   PNG 描画
-========================= */
+function drawTextInCell(ctx, text, x, y, cellW, cellH) {
+  const PADDING = 8;
+  const MAX_FONT = 16;
+  const MIN_FONT = 10;
+  const LINE_HEIGHT_RATIO = 1.2;
+
+  let fontSize = MAX_FONT;
+  let lines = [];
+
+  // フォントサイズを下げながら試行
+  while (fontSize >= MIN_FONT) {
+    ctx.font = `${fontSize}px ${FONT_FAMILY}`;
+
+    lines = wrapText(ctx, text, cellW - PADDING * 2);
+
+    const lineHeight = fontSize * LINE_HEIGHT_RATIO;
+    const totalHeight = lines.length * lineHeight;
+
+    if (totalHeight <= (cellH - PADDING * 2)) {
+      break;
+    }
+
+    fontSize--;
+  }
+
+  const lineHeight = fontSize * LINE_HEIGHT_RATIO;
+  const startY =
+    y + (cellH - lines.length * lineHeight) / 2 + lineHeight / 2;
+
+  // 他セルにはみ出さないようクリップ
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, cellW, cellH);
+  ctx.clip();
+
+  lines.forEach((line, i) => {
+    const drawY = startY + i * lineHeight;
+    if (drawY > y + cellH) return;
+    ctx.fillText(line, x + cellW / 2, drawY);
+  });
+
+  ctx.restore();
+}
+
+function wrapText(ctx, text, maxWidth) {
+  const chars = String(text).split("");
+  const lines = [];
+  let current = "";
+
+  for (const ch of chars) {
+    const test = current + ch;
+    const width = ctx.measureText(test).width;
+
+    if (width > maxWidth && current !== "") {
+      lines.push(current);
+      current = ch;
+    } else {
+      current = test;
+    }
+  }
+
+  if (current) lines.push(current);
+
+  return lines;
+}
+
 export function renderShiftImage(rowData) {
   const CELL_W = 180;
   const CELL_H = 40;
   const MAX_W = 4000;
   const MAX_H = 4000;
 
-  /* ---- 縦：A列に値がある行まで ---- */
+  // 最大行数
   let maxRow = 0;
   for (let r = 0; r < rowData.length; r++) {
     const cellA = rowData[r]?.values?.[0];
@@ -93,7 +137,7 @@ export function renderShiftImage(rowData) {
   }
   if (maxRow === 0) return null;
 
-  /* ---- 横：値 or 書式がある最大列 ---- */
+  // 最大列数
   let maxCol = 0;
   for (let r = 0; r < maxRow; r++) {
     rowData[r]?.values?.forEach((cell, c) => {
@@ -142,10 +186,13 @@ export function renderShiftImage(rowData) {
         "";
 
       if (value !== "") {
-        ctx.fillText(
+        drawTextInCell(
+          ctx,
           String(value),
-          x + CELL_W / 2,
-          y + CELL_H / 2
+          x,
+          y,
+          CELL_W,
+          CELL_H
         );
       }
     }
@@ -154,31 +201,20 @@ export function renderShiftImage(rowData) {
   return canvas.toBuffer("image/png");
 }
 
-/* =========================
-   メッセージ文生成
-========================= */
+// 更新メッセージ生成
 function buildMessageText(def) {
   const now = new Date();
 
-  const um = now.getMonth() + 1;
-  const ud = now.getDate();
-  const hh = String(now.getHours()).padStart(2, "0");
-  const mm = String(now.getMinutes()).padStart(2, "0");
+  const strMonth = String(now.getMonth() + 1).padStart(2, "0");
+  const strDate = String(now.getDate()).padStart(2, "0");
+  const strHour = String(now.getHours()).padStart(2, "0");
+  const strMinute = String(now.getMinutes()).padStart(2, "0");
 
-  return (
-`(※自動更新中…  最終更新 : ${um}/${ud} ${hh}:${mm})`
-  );
+  return (`(※自動更新中…  最終更新 : ${strMonth}/${strDate} ${strHour}:${strMinute})`);
 }
 
-/* =========================
-   Discord 投稿
-========================= */
-export async function postShiftImages({
-  client,
-  mode,
-  triggerMessage,
-  shiftDefinitions,
-}) {
+// Discordに投稿
+export async function postShiftImages({client, mode, triggerMessage, shiftDefinitions,}) {
   console.log("postShiftImages start");
   if (!Array.isArray(shiftDefinitions)) {
     throw new Error("shiftDefinitions must be an array");
@@ -190,19 +226,19 @@ export async function postShiftImages({
     if (!png) continue;
 
     const date = new Date(def.date);
-    const jpWeek = ["日", "月", "火", "水", "木", "金", "土"];
-    const m = date.getMonth() + 1;
-    const d = date.getDate();
-    const w = jpWeek[date.getDay()];
+    const weeks = ["日", "月", "火", "水", "木", "金", "土"];
+    const strMonth = date.getMonth() + 1;
+    const strDate = date.getDate();
+    const week = weeks[date.getDay()];
 
-    const identifier = `${m}月${d}日(${w}) ${def.sheetName}`;
+    const identifier = `${strMonth}月${strDate}日(${week})`;// ${def.sheetName}`;
     const content = `${identifier}\n\n${buildMessageText(def)}`;
 
     const attachment = new AttachmentBuilder(png, {
       name: `${def.sheetName}.png`,
     });
 
-    if (mode === "message" && triggerMessage) {
+    if ((mode === "message") && triggerMessage) {
       await triggerMessage.channel.send({
         content,
         files: [attachment],

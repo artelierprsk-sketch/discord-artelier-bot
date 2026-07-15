@@ -4,7 +4,7 @@ import path from "path";
 
 export const command = new SlashCommandBuilder()
   .setName("quiz")
-  .setDescription("ランダムでクイズを生成します");
+  .setDescription("プロセカ収録楽曲の五十音順クイズを出題します。");
 
 const UNIT_MAP = {
   "0_VS": "VirtualSinger",
@@ -80,7 +80,8 @@ export async function execute(interaction, client) {
   const quizMessage = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
 
   // ボタン押下処理
-  const filter = i => i.isButton();
+  // フィルタ: この出題メッセージに対応するボタンのみ受け付ける
+  const filter = i => i.isButton() && i.customId.endsWith(`_${pos}`);
   const collector = interaction.channel.createMessageComponentCollector({ filter, time: 5 * 60 * 1000 });
 
   collector.on("collect", async i => {
@@ -114,10 +115,15 @@ export async function execute(interaction, client) {
       replyText = `### 答え\n「${music}」`;
     }
 
-    // 出題メッセージへの返信として送信
-    await i.channel.send({ content: replyText, reply: { messageReference: quizMessage.id } });
+    try {
+      // まずインタラクションを ACK（デファー）してから重い処理や送信を行う
+      await i.deferUpdate();
 
-    // ボタンの反応を ACK
-    await i.deferUpdate();
+      // 出題メッセージへの返信として送信
+      await i.channel.send({ content: replyText, reply: { messageReference: quizMessage.id } });
+    } catch (err) {
+      console.error("❌ quiz button handler error:", err);
+      // 既に ACK 済みや返信済みの場合があるため、安全策としてログのみ
+    }
   });
 }
