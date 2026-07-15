@@ -221,7 +221,7 @@ async function executeCollectSupportParty(interaction, client) {
     }
 
     await Promise.allSettled(
-      Array.from(uniqueMessagesByUsername.values()).map((message) => message.react("✅"))
+      Array.from(uniqueMessagesByUsername.values()).map((message) => message.react("🌸"))
     );
 
     await interaction.reply({
@@ -411,7 +411,7 @@ async function executeShiftCollection(interaction, client) {
       }
 
       await Promise.allSettled(
-        userEntries.map((message) => message.react("✅"))
+        userEntries.map((message) => message.react("🌸"))
       );
 
       await safeReply(selectInteraction, {
