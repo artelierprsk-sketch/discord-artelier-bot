@@ -16,7 +16,7 @@ export const SHIFT_DEFINITIONS = [
       channelId: "1487663329018253463",
     },
     {
-      key: "day2",
+      key: "day3",
       date: "2026-07-23",
       sheetName: "3日目",
       channelId: "1518248437462597843",

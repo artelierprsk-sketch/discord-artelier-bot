@@ -173,19 +173,27 @@ async function executeCollectSupportParty(interaction, client) {
     }
 
     const pattern = /\d{3}\/[^/]+\/\d{2}(?:\.\d)?/;
-    const values = Array.from(uniqueMessagesByUsername.values()).map((message) => {
-      const content = message.content || "";
-      const lines = content.split(/\r?\n/);
-      const displayName = message.member?.displayName || message.author.username;
-      const matchedParts = [];
-      for (const line of lines) {
-        const match = line.match(pattern);
-        if (match) {
-          matchedParts.push(match[0]);
+    const values = await Promise.all(
+      Array.from(uniqueMessagesByUsername.values()).map(async (message) => {
+        const content = message.content || "";
+        const lines = content.split(/\r?\n/);
+        let displayName = message.author.username;
+        try {
+          const member = await channel.guild.members.fetch(message.author.id);
+          displayName = member.displayName || message.author.username;
+        } catch (error) {
+          console.warn(`⚠️ Failed to fetch member for ${message.author.username}:`, error);
         }
-      }
-      return [message.author.username, displayName, content, ...matchedParts];
-    });
+        const matchedParts = [];
+        for (const line of lines) {
+          const match = line.match(pattern);
+          if (match) {
+            matchedParts.push(match[0]);
+          }
+        }
+        return [message.author.username, displayName, content, ...matchedParts];
+      })
+    );
 
     const existingUpdates = [];
     const newRows = [];
