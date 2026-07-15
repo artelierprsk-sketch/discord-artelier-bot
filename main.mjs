@@ -12,6 +12,7 @@ import { startTransitionCron } from "./schedulers/transitionCron.mjs";
 import { startMessagePostCron, setupMessageFixWatcher } from "./schedulers/messagePostCron.mjs";
 
 console.log("🚀 main.mjs start");
+console.log("3.1.0");
 
 dotenv.config();
 
