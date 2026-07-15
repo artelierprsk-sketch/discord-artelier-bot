@@ -381,9 +381,17 @@ async function executeShiftCollection(interaction, client) {
 
       const updates = [];
       let processedCount = 0;
+      const metaUsernameRow = 11;
+      const metaContentRow = 12;
 
       for (const message of userEntries) {
-        const displayName = message.member?.displayName || message.author.username;
+        let displayName = message.author.username;
+        try {
+          const member = await channel.guild.members.fetch(message.author.id);
+          displayName = member.displayName || message.author.username;
+        } catch (error) {
+          console.warn(`⚠️ Failed to fetch member for ${message.author.username}:`, error);
+        }
         const username = message.author.username;
         const content = message.content || "";
         const ranges = parseRanges(content);
@@ -399,13 +407,8 @@ async function executeShiftCollection(interaction, client) {
           }
         }
 
-        const firstEmptyARowIndex = columnA.findIndex((row, index) => index >= 2 && (!row[0] || row[0].toString().trim() === ""));
-        const metaRow = firstEmptyARowIndex === -1 ? columnA.length + 1 : firstEmptyARowIndex + 1;
-        updates.push({ range: `${sheetName}!${columnLetter}${metaRow}`, values: [[username]] });
-        updates.push({ range: `${sheetName}!${columnLetter}${metaRow + 1}`, values: [[content]] });
-
-        columnA[metaRow - 1] = [username];
-        columnA[metaRow] = [content];
+        updates.push({ range: `${sheetName}!${columnLetter}${metaUsernameRow}`, values: [[username]] });
+        updates.push({ range: `${sheetName}!${columnLetter}${metaContentRow}`, values: [[content]] });
 
         processedCount += 1;
       }
