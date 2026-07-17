@@ -27,6 +27,44 @@ function toColumnLetter(columnNumber) {
   return letter;
 }
 
+async function getSheetMetadata(sheets, spreadsheetId, sheetName) {
+  const response = await sheets.spreadsheets.get({
+    spreadsheetId,
+    includeGridData: false,
+    fields: "sheets.properties",
+  });
+  const sheet = response.data.sheets?.find((item) => item.properties?.title === sheetName);
+  if (!sheet?.properties) {
+    throw new Error(`シート「${sheetName}」が見つかりません。`);
+  }
+  return {
+    sheetId: sheet.properties.sheetId,
+    maxColumns: sheet.properties.gridProperties?.columnCount || 26,
+  };
+}
+
+async function ensureSheetHasColumns(sheets, spreadsheetId, sheetId, requiredColumns, currentColumns) {
+  if (requiredColumns <= currentColumns) {
+    return currentColumns;
+  }
+  const addCount = requiredColumns - currentColumns;
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          appendDimension: {
+            sheetId,
+            dimension: "COLUMNS",
+            length: addCount,
+          },
+        },
+      ],
+    },
+  });
+  return requiredColumns;
+}
+
 async function safeReply(interaction, options) {
   try {
     if (interaction.replied || interaction.deferred) {
@@ -325,6 +363,10 @@ async function executeShiftCollection(interaction, client) {
       await selectInteraction.deferUpdate();
 
       const sheets = getSheetsClient();
+      const sheetMetadata = await getSheetMetadata(sheets, sheetId, sheetName);
+      const sheetGid = sheetMetadata.sheetId;
+      let maxColumns = sheetMetadata.maxColumns;
+
       const [columnAResp, row2Resp] = await Promise.all([
         sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${sheetName}!A:A` }),
         sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${sheetName}!J2:ZZ2` }),
@@ -342,15 +384,20 @@ async function executeShiftCollection(interaction, client) {
         }
       });
 
-      const nextColumnIndex = (offset) => {
+      const nextColumnIndex = async () => {
         for (let i = 0; i < allocation.length; i++) {
           if (!allocation[i]) {
             allocation[i] = true;
             return 9 + i;
           }
         }
+
+        const nextIndex = 9 + allocation.length;
+        const requiredColumnNumber = nextIndex + 1;
+        maxColumns = await ensureSheetHasColumns(sheets, sheetId, sheetGid, requiredColumnNumber, maxColumns);
+
         allocation.push(true);
-        return 9 + allocation.length - 1;
+        return nextIndex;
       };
 
       const parseRanges = (text) => {
@@ -397,7 +444,7 @@ async function executeShiftCollection(interaction, client) {
         const username = message.author.username;
         const content = message.content || "";
         const ranges = parseRanges(content);
-        const columnIndex = nextColumnIndex();
+        const columnIndex = await nextColumnIndex();
         const columnLetter = toColumnLetter(columnIndex + 1);
 
         updates.push({ range: `${sheetName}!${columnLetter}2`, values: [[displayName]] });
